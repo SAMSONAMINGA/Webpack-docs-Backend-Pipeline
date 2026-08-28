@@ -259,10 +259,33 @@ All such values should live exclusively in GitHub Actions repository/environment
 
 ## 7. Appendix: full file tree
 
-webpack-docs/ ├── packages/ │ ├── extractor/ # version detection, TypeDoc extraction, normalization │ │ └── src/ {types,logger,version-detect,extract,normalize,report,index}.ts │ │ └── adapters/ {base,v5,v6,latest,index}.ts │ ├── typedoc-theme/ # Intermediate JSON -&gt; Markdown │ │ └── src/ {render-markdown,generation-report,index}.ts │ └── site/ # SvelteKit frontend │ ├── src/lib/components/ Header, KnightBackground, SidebarMenu, │ │ AuthButtons, AvatarCompanion, DocViewer, │ │ TableOfContents, SearchBar, VersionSwitcher, │ │ CodeBlock, KnightHelmetIcon, Breadcrumbs │ ├── src/lib/stores/ auth.ts, knight.ts, ui.ts │ ├── src/lib/markdown/ parse.ts, enhanceCodeBlocks.ts │ ├── src/lib/content.ts build-time content index (glob-based) │ ├── src/routes/ /, /docs/\[version]/\[...slug], /status │ └── content/ generated docs + versions.json (pipeline output) ├── scripts/ extract-api.ts, generate-md.ts, │ sync-versions.ts, health-check.ts ├── .github/workflows/ docs.yml, version-matrix.yml, monitor.yml ├── monitoring/ status-definitions.ts, dashboard-schema.ts, alerts.ts ├── reports/ per-version run artifacts (generated, git-ignored) ├── package.json, pnpm-workspace.yaml, tsconfig.json └── README.md
+webpack-docs/ 
+├── packages/
+│ ├── extractor/        # version detection, TypeDoc extraction, normalization 
+│ │ └── src/ {types,logger,version-detect,extract,normalize,report,index}.ts 
+│ │ └── adapters/ {base,v5,v6,latest,index}.ts 
+│ ├── typedoc-theme/    # Intermediate JSON -&gt; Markdown 
+│ │ └── src/ {render-markdown,generation-report,index}.ts 
+│ └── site/             # SvelteKit frontend 
+│ ├── src/lib/components/ #Header, KnightBackground, SidebarMenu, 
+│ │                     # AuthButtons, AvatarCompanion, DocViewer, 
+│ │                     #TableOfContents, SearchBar, VersionSwitcher, 
+│ │                     #CodeBlock, KnightHelmetIcon, Breadcrumbs
+│ ├── src/lib/stores/   #auth.ts, knight.ts, ui.ts 
+│ ├── src/lib/markdown/ #parse.ts, enhanceCodeBlocks.ts 
+│ ├── src/lib/content.ts#build-time content index (glob-based) 
+│ ├── src/routes/       #/, /docs/\[version]/\[...slug], /status 
+│ └── content/          #generated docs + versions.json (pipeline output) 
+├── scripts/            #extract-api.ts, generate-md.ts, 
+│                       #sync-versions.ts, health-check.ts 
+├── .github/workflows/  #docs.yml, version-matrix.yml, monitor.yml
+├── monitoring/         #status-definitions.ts, dashboard-schema.ts, alerts.ts
+├── reports/            #per-version run artifacts (generated, git-ignored) 
+├── package.json,       #pnpm-workspace.yaml, tsconfig.json 
+└── README.md
 
  
 
  
 
-SHADOWFALL / webpack-docs — system documentation · no secrets included
+SHADOWFALL / webpack-docs — system documentation ·
