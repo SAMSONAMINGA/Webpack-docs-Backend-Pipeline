@@ -1,0 +1,67 @@
+name: version-matrix
+
+# Documents every actively-supported Webpack major in parallel, so v5 and v6
+# (and, once added, future majors) stay in sync side-by-side rather than
+# drifting apart because only one version gets attention.
+on:
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: "Comma-separated webpack versions to build, e.g. 5.94.0,6.0.0-beta.3"
+        required: false
+        default: "5.94.0,latest"
+  schedule:
+    - cron: "0 6 * * 1"
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+
+jobs:
+  build-matrix:
+    strategy:
+      fail-fast: false # one version's failure must never hide another's report
+      matrix:
+        webpack_version: ${{ fromJSON(format('[{0}]', github.event.inputs.versions || '"5.94.0","latest"')) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm add -D webpack@${{ matrix.webpack_version }} -w
+      - run: pnpm exec tsx scripts/extract-api.ts --webpack-version ${{ matrix.webpack_version }}
+      - run: pnpm exec tsx scripts/generate-md.ts --webpack-version ${{ matrix.webpack_version }}
+      - run: pnpm exec tsx scripts/health-check.ts --webpack-version ${{ matrix.webpack_version }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: matrix-reports-${{ matrix.webpack_version }}
+          path: reports/
+
+  sync-and-build-site:
+    needs: build-matrix
+    if: always() # sync whatever succeeded even if one matrix leg failed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: matrix-reports-*
+          path: reports/
+          merge-multiple: true
+      - run: pnpm exec tsx scripts/sync-versions.ts
+      - run: pnpm site:build

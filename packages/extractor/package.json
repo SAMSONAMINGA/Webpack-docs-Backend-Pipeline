@@ -1,0 +1,15 @@
+{
+  "name": "@webpack-docs/extractor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "typedoc": "^0.26.10",
+    "typescript": "^5.6.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5"
+  }
+}

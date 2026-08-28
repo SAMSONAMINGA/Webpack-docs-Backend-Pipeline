@@ -1,0 +1,9 @@
+{
+  "webpackVersion": "5.94.0",
+  "generatedAt": "2026-08-01T06:00:00.000Z",
+  "categories": ["Configuration", "Plugins"],
+  "symbols": [
+    { "id": "Configuration", "name": "Configuration", "category": "Configuration", "kind": "interface", "slug": "configuration" },
+    { "id": "DefinePlugin", "name": "DefinePlugin", "category": "Plugins", "kind": "class", "slug": "define-plugin" }
+  ]
+}

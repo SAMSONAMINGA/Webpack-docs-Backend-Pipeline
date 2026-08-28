@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.svelte-kit/
+build/
+reports/
+!reports/.gitkeep
+monitoring/data/
+*.log.jsonl
+.env

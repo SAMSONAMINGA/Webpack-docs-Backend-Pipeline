@@ -1,0 +1,66 @@
+name: monitor
+
+# Runs independently of the docs pipeline so monitoring keeps working even
+# if the last docs run failed outright — a human should be able to see
+# "the pipeline itself is broken" as a status, not just silence.
+on:
+  schedule:
+    - cron: "0 * * * *" # hourly
+  workflow_dispatch: {}
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+
+      - name: Re-run health checks for every documented version
+        run: |
+          for dir in reports/v*/; do
+            version_tag=$(basename "$dir")
+            wp_version=$(node -e "console.log(require('./${dir}intermediate.json').webpackVersion)" 2>/dev/null || echo "")
+            if [ -n "$wp_version" ]; then
+              echo "Checking $version_tag ($wp_version)"
+              pnpm exec tsx scripts/health-check.ts --webpack-version "$wp_version" || echo "::warning::Health check flagged $version_tag"
+            fi
+          done
+
+      - name: Update version coverage dashboard
+        run: pnpm exec tsx scripts/sync-versions.ts
+
+      - name: Upload monitoring snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-snapshot-${{ github.run_id }}
+          path: monitoring/data/
+          retention-days: 30
+
+      # Alerting: any job step above that exits non-zero already fails this
+      # workflow, which GitHub surfaces via its native failure notifications
+      # to repo watchers. Wire an additional Slack/PagerDuty step here by
+      # reading monitoring/data/health-*.json and posting on status=="alert".
+      - name: Check for alert-level statuses
+        run: |
+          alert_found=0
+          for f in monitoring/data/health-*.json; do
+            [ -e "$f" ] || continue
+            status=$(node -e "console.log(require('./$f').status)")
+            echo "$f -> $status"
+            if [ "$status" = "alert" ]; then alert_found=1; fi
+          done
+          if [ "$alert_found" = "1" ]; then
+            echo "::error::One or more documented versions are in ALERT status. See monitoring-snapshot artifact."
+            exit 1
+          fi

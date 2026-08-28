@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  scrollbar-color: theme("colors.iron.700") theme("colors.charcoal.950");
+}
+
+::selection {
+  background: theme("colors.ember.700");
+  color: white;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid theme("colors.ember.500");
+  outline-offset: 2px;
+}

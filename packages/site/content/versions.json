@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-08-01T06:00:00.000Z",
+  "latestTag": "v5",
+  "versions": [
+    {
+      "tag": "v5",
+      "webpackVersion": "5.94.0",
+      "adapter": "webpack-v5-adapter",
+      "totalIncluded": 2,
+      "generatedAt": "2026-08-01T06:00:00.000Z",
+      "approved": true
+    }
+  ]
+}

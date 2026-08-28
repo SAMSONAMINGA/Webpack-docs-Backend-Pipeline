@@ -1,0 +1,31 @@
+{
+  "name": "webpack-docs",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Automated, human-in-the-loop documentation pipeline for Webpack (v5/v6/latest).",
+  "scripts": {
+    "extract": "tsx scripts/extract-api.ts",
+    "generate": "tsx scripts/generate-md.ts",
+    "sync-versions": "tsx scripts/sync-versions.ts",
+    "health-check": "tsx scripts/health-check.ts",
+    "pipeline:preview": "tsx scripts/extract-api.ts && tsx scripts/generate-md.ts --preview",
+    "pipeline:full": "tsx scripts/extract-api.ts && tsx scripts/generate-md.ts && tsx scripts/health-check.ts",
+    "site:dev": "pnpm --filter @webpack-docs/site dev",
+    "site:build": "pnpm --filter @webpack-docs/site build",
+    "lint": "eslint . --ext .ts,.svelte",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@webpack-docs/extractor": "workspace:*",
+    "@webpack-docs/typedoc-theme": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "@types/node": "^22.7.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

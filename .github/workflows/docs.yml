@@ -1,0 +1,148 @@
+name: docs
+
+# TRIGGERS (per spec): push to main, weekly schedule, webpack release webhook
+# (via repository_dispatch), and manual dispatch where a human can pick a
+# specific webpack version and toggle preview/approval-gate behavior.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1" # every Monday 06:00 UTC
+  repository_dispatch:
+    types: [webpack-release]
+  workflow_dispatch:
+    inputs:
+      webpack_version:
+        description: "Specific webpack version to document (e.g. 5.94.0). Leave blank to use latest."
+        required: false
+        type: string
+      preview_only:
+        description: "Stop after markdown generation (Preview Mode) — do not build/deploy."
+        required: false
+        type: boolean
+        default: false
+      require_approval:
+        description: "Enable the human approval gate before build/deploy."
+        required: false
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+
+jobs:
+  pipeline:
+    name: Extract → Normalize → Generate → Build → Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      # 2. ENVIRONMENT PREPARATION
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve target webpack version
+        id: resolve-version
+        run: |
+          if [ -n "${{ github.event.inputs.webpack_version }}" ]; then
+            echo "version=${{ github.event.inputs.webpack_version }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ github.event.client_payload.version }}" ]; then
+            echo "version=${{ github.event.client_payload.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install target webpack version
+        run: |
+          echo "Installing webpack@${{ steps.resolve-version.outputs.version }}"
+          pnpm add -D webpack@${{ steps.resolve-version.outputs.version }} -w
+
+      # 3 + 4 + 5. VERSION DETECTION, ADAPTER LOADING, EXTRACTION, NORMALIZATION
+      - name: Run extraction stage
+        run: pnpm exec tsx scripts/extract-api.ts --trigger "${{ github.event_name }}"
+
+      # 6. MARKDOWN GENERATION (7. human control points: preview / approval gate)
+      - name: Run markdown generation stage
+        env:
+          APPROVAL_GATE: ${{ github.event.inputs.require_approval == 'true' && '1' || '0' }}
+        run: |
+          if [ "${{ github.event.inputs.preview_only }}" = "true" ]; then
+            pnpm exec tsx scripts/generate-md.ts --preview
+          else
+            pnpm exec tsx scripts/generate-md.ts
+          fi
+
+      - name: Sync version manifest
+        run: pnpm exec tsx scripts/sync-versions.ts
+
+      # Upload everything a human might want to inspect, regardless of
+      # whether the pipeline continues — this is non-negotiable per the
+      # human-in-the-loop requirements.
+      - name: Upload pipeline artifacts (Intermediate JSON + all reports)
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-pipeline-reports-${{ steps.resolve-version.outputs.version }}
+          path: |
+            reports/
+            packages/site/content/docs/
+          retention-days: 90
+
+      - name: Stop here if preview-only
+        if: ${{ github.event.inputs.preview_only == 'true' }}
+        run: echo "🔎 Preview mode requested — stopping before build/deploy. Review the uploaded artifacts, then re-run without preview_only."
+
+      # 8. SITE BUILD
+      - name: Build documentation site
+        if: ${{ github.event.inputs.preview_only != 'true' }}
+        run: pnpm site:build
+
+      # 9. DEPLOYMENT
+      - name: Deploy site
+        id: deploy
+        if: ${{ github.event.inputs.preview_only != 'true' }}
+        run: |
+          # Placeholder for the configured hosting provider's deploy CLI
+          # (e.g. Vercel, Netlify, Cloudflare Pages, GitHub Pages).
+          # Must record the resulting URL for the health-check stage.
+          echo "url=https://docs.example.com/${{ steps.resolve-version.outputs.version }}" >> "$GITHUB_OUTPUT"
+
+      - name: Record deployment metadata
+        if: ${{ github.event.inputs.preview_only != 'true' }}
+        run: |
+          mkdir -p reports
+          cat <<EOF > reports/deployment.json
+          {
+            "url": "${{ steps.deploy.outputs.url }}",
+            "deployedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "webpackVersion": "${{ steps.resolve-version.outputs.version }}",
+            "runId": "${{ github.run_id }}"
+          }
+          EOF
+
+      # 10. POST-RUN MONITORING & HEALTH CHECK
+      - name: Health check
+        if: ${{ github.event.inputs.preview_only != 'true' }}
+        run: pnpm exec tsx scripts/health-check.ts --webpack-version "${{ steps.resolve-version.outputs.version }}"
+
+      - name: Upload final summary report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-summary-${{ steps.resolve-version.outputs.version }}
+          path: reports/**/summary-report.*
