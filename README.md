@@ -1,5 +1,7 @@
 # Webpack-docs-Backend-Pipeline
 The Black Guard's Archive
+<img width="1875" height="449" alt="image" src="https://github.com/user-attachments/assets/064e81b1-eb21-4ec9-aa4c-05db5accfab4" />
+
 
 # SHADOWFALL
 
@@ -41,6 +43,8 @@ webpack-docs monorepo · v1.0.0 · generated for review, no credentials included
  
 
 ## 2. Architecture at a glance
+<img width="1041" height="384" alt="image" src="https://github.com/user-attachments/assets/3add56d3-62a6-431b-b1f8-1fe3e51e5778" />
+
 
 The pipeline runs as a strict, linear lifecycle. Two points (grey/orange) are explicit human control points.
 
@@ -130,31 +134,10 @@ Every script is independently re-runnable — a human can re-run just the extrac
 
 SvelteKit (Svelte 5) + Tailwind, built with `@sveltejs/adapter-static` so the whole site prerenders to plain HTML/CSS/JS — no server required at runtime.
 
- 
 
 ### 4.1 Design tokens
+<img width="981" height="228" alt="image" src="https://github.com/user-attachments/assets/03282956-7672-44be-9e44-1eaeb5a5f6fc" />
 
-The entire "Medieval Dark Knight" palette is centralized in `tailwind.config.js`:
-
-charcoal-950
-
-charcoal-800
-
-iron-700
-
-silver-300
-
-ember-500
-
-wisp-400
-
-parchment-100
-
-auth · login
-
-auth · signup
-
-auth · logout
 
 Typography: **UnifrakturMaguntia** (blackletter, wordmark only), **Cinzel** (medieval serif, headings/UI), **EB Garamond** (body text), **JetBrains Mono** (code).
 
@@ -184,41 +167,21 @@ Typography: **UnifrakturMaguntia** (blackletter, wordmark only), **Cinzel** (med
  
 
 ### 4.3 Routes
+<img width="953" height="309" alt="image" src="https://github.com/user-attachments/assets/a9c775b7-8b9a-4c89-9482-9544b9724aaf" />
 
-| Route                       | Purpose                                                                                                                                                   |
-|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `/`                         | Homepage — hero, and a card per documented Webpack version.                                                                                               |
-| `/docs/[version]`           | Redirects to that version's first symbol (no dead-end landing page).                                                                                      |
-| `/docs/[version]/[...slug]` | The doc viewer for one symbol; `entries()` derives every prerendered path directly from what the backend actually generated.                              |
-| `/status`                   | "The Watchtower" — human-readable rendering of the monitoring dashboard data (health status, drift, unrecognized constructs, approval state) per version. |
-
- 
 
 ### 4.4 Visual walkthrough
+<img width="962" height="597" alt="image" src="https://github.com/user-attachments/assets/7249d267-d8be-401f-afb6-9c5c7865700a" />
 
-No headless browser was available in the environment this was built in, so the panels below are **faithful vector mockups** built from the project's real CSS values (not literal screenshots). Running `pnpm site:build && pnpm --filter @webpack-docs/site preview` locally will show the pixel-identical live version.
-
- 
-
-Homepage — /
-
-SHADOWFALL Login Sign Up SHADOWFALL Ancient tomes of build configuration, forged automatically. Enter the Archive (V5) V5 5.94.0 2 symbols documented V6 not yet documented
-
-Hero + version cards, off-center Black Knight silhouette, ember particles.
-
- 
 
 Documentation Viewer — /docs/v5/Configuration/configuration
-
-SHADOWFALL Archive › V5 › Configuration › configuration Search the tomes... V5 ▾ Configuration interface · webpack/types.d.ts:412 The top-level options object passed to webpack(). Every other configuration interface hangs off this one. Signature TYPESCRIPT Copy Configuration(options: ConfigurationOptions): Configuration Properties PropertyTypeDescription mode"development" | "production" ON THIS PAGE Configuration Signature Properties
+<img width="924" height="473" alt="image" src="https://github.com/user-attachments/assets/2fb38541-8709-4aa9-b472-11c06a26d527" />
 
 Parchment-textured panel, highlighted code block with copy button, scroll-spy TOC rail, wisp-colored header (alternates with ember on navigation).
 
  
-
 The Watchtower — /status
-
-SHADOWFALL The Watchtower A clear view of whether anything needs a human's eye. V5 5.94.0 ✅ Healthy 2 symbols documented · drift 0.0% · approved V6 — no runs yet
+<img width="938" height="349" alt="image" src="https://github.com/user-attachments/assets/d5c3ebc2-63cd-4ae8-b9c6-98dab6da4ed3" />
 
 Per-version health rows sourced directly from `monitoring/data/health-*.json`.
 
@@ -258,35 +221,7 @@ All such values should live exclusively in GitHub Actions repository/environment
  
 
 ## 7. Appendix: full file tree
+<img width="915" height="573" alt="image" src="https://github.com/user-attachments/assets/ca1064dc-4a90-4937-9308-3ab00923aab1" />
 
-webpack-docs/ 
-├── packages/
-│ ├── extractor/        # version detection, TypeDoc extraction, normalization 
-│ │ └── src/ {types,logger,version-detect,extract,normalize,report,index}.ts 
-│ │ └── adapters/ {base,v5,v6,latest,index}.ts 
-│ ├── typedoc-theme/    # Intermediate JSON -&gt; Markdown 
-│ │ └── src/ {render-markdown,generation-report,index}.ts 
-│ └── site/             # SvelteKit frontend 
-│ ├── src/lib/components/ #Header, KnightBackground, SidebarMenu, 
-│ │                     # AuthButtons, AvatarCompanion, DocViewer, 
-│ │                     #TableOfContents, SearchBar, VersionSwitcher, 
-│ │                     #CodeBlock, KnightHelmetIcon, Breadcrumbs
-│ ├── src/lib/stores/   #auth.ts, knight.ts, ui.ts 
-│ ├── src/lib/markdown/ #parse.ts, enhanceCodeBlocks.ts 
-│ ├── src/lib/content.ts#build-time content index (glob-based) 
-│ ├── src/routes/       #/, /docs/\[version]/\[...slug], /status 
-│ └── content/          #generated docs + versions.json (pipeline output) 
-├── scripts/            #extract-api.ts, generate-md.ts, 
-│                       #sync-versions.ts, health-check.ts 
-├── .github/workflows/  #docs.yml, version-matrix.yml, monitor.yml
-├── monitoring/         #status-definitions.ts, dashboard-schema.ts, alerts.ts
-├── reports/            #per-version run artifacts (generated, git-ignored) 
-├── package.json,       #pnpm-workspace.yaml, tsconfig.json 
-└── README.md
-
- 
-
- 
 
 SHADOWFALL / webpack-docs — system documentation ·
->>>>>>> 4fe64f4e4da2360f6f9acb12f93477e2869d2e8d
