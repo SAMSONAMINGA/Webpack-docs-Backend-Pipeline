@@ -79,4 +79,4 @@ jobs:
              echo "::error::One or more documented versions are in ALERT status. See monitoring-snapshot artifact."
              exit 1
            fi
-           done
+           done 
