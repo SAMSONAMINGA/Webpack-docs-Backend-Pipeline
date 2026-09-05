@@ -26,32 +26,33 @@ interface VersionEntry {
 
 function main() {
   const reportsRoot = resolve(process.cwd(), "reports");
-  if (!existsSync(reportsRoot)) {
-    console.error("❌ No reports/ directory found. Run the extraction stage for at least one version first.");
-    process.exit(1);
+  let entries: VersionEntry[] = [];
+
+  // If reports directory exists, scan it for version data
+  if (existsSync(reportsRoot)) {
+    const versionDirs = readdirSync(reportsRoot).filter((d) => /^v\d+$/.test(d));
+
+    for (const tag of versionDirs) {
+      const intermediatePath = resolve(reportsRoot, tag, "intermediate.json");
+      if (!existsSync(intermediatePath)) continue;
+
+      const doc = validateIntermediateDoc(JSON.parse(readFileSync(intermediatePath, "utf-8")));
+      const approved = existsSync(resolve(reportsRoot, tag, "APPROVED"));
+
+      entries.push({
+        tag,
+        webpackVersion: doc.webpackVersion,
+        adapter: doc.adapter,
+        totalIncluded: doc.stats.totalIncluded,
+        generatedAt: doc.generatedAt,
+        approved,
+      });
+    }
+
+    entries.sort((a, b) => Number.parseInt(b.tag.slice(1)) - Number.parseInt(a.tag.slice(1)));
+  } else {
+    console.warn("⚠️  No reports/ directory found. Using empty version manifest.");
   }
-
-  const versionDirs = readdirSync(reportsRoot).filter((d) => /^v\d+$/.test(d));
-  const entries: VersionEntry[] = [];
-
-  for (const tag of versionDirs) {
-    const intermediatePath = resolve(reportsRoot, tag, "intermediate.json");
-    if (!existsSync(intermediatePath)) continue;
-
-    const doc = validateIntermediateDoc(JSON.parse(readFileSync(intermediatePath, "utf-8")));
-    const approved = existsSync(resolve(reportsRoot, tag, "APPROVED"));
-
-    entries.push({
-      tag,
-      webpackVersion: doc.webpackVersion,
-      adapter: doc.adapter,
-      totalIncluded: doc.stats.totalIncluded,
-      generatedAt: doc.generatedAt,
-      approved,
-    });
-  }
-
-  entries.sort((a, b) => Number.parseInt(b.tag.slice(1)) - Number.parseInt(a.tag.slice(1)));
 
   const latest = entries.find((e) => e.approved) ?? entries[0];
 
