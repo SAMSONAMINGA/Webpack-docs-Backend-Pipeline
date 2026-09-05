@@ -53,16 +53,16 @@ jobs:
       # reading monitoring/data/health-*.json and posting on status=="alert".
       - name: Check for alert-level statuses
         run: |
-         if [ ! -d "reports" ]; then
-          echo "⚠️ No reports/ directory found. Skipping health checks until extraction runs."
-          exit 0
-         fi
-         
-         for dir in reports/v*/; do
-          version_tag=$(basename "$dir")
-          wp_version=$(node -e "console.log(require('./${dir}intermediate.json').webpackVersion)" 2>/dev/null || echo "")
-          if [ -n "$wp_version" ]; then
-            echo "Checking $version_tag ($wp_version)"
-            pnpm exec tsx scripts/health-check.ts --webpack-version "$wp_version" || echo "::warning::Health check flagged $version_tag"
+          if [ ! -d "reports" ]; then
+            echo "⚠️ No reports/ directory found. Skipping health checks until extraction runs."
+            exit 0
           fi
-         done
+         
+          for dir in reports/v*/; do
+            version_tag=$(basename "$dir")
+            wp_version=$(node -e "console.log(require('./${dir}intermediate.json').webpackVersion)" 2>/dev/null || echo "")
+            if [ -n "$wp_version" ]; then
+              echo "Checking $version_tag ($wp_version)"
+              pnpm exec tsx scripts/health-check.ts --webpack-version "$wp_version" || echo "::warning::Health check flagged $version_tag"
+            fi
+           done
