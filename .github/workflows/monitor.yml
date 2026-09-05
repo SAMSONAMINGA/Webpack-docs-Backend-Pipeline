@@ -28,7 +28,10 @@ jobs:
 
       - name: Re-run health checks for every documented version
         run: |
-          mkdir -p reports
+          if [ ! -d "reports" ]; then
+            echo "::warning::No reports directory found. Skipping health checks."
+            exit 0
+          fi
           for dir in reports/v*/; do
             version_tag=$(basename "$dir")
             wp_version=$(node -e "console.log(require('./${dir}intermediate.json').webpackVersion)" 2>/dev/null || echo "")
@@ -36,8 +39,7 @@ jobs:
               echo "Checking $version_tag ($wp_version)"
               pnpm exec tsx scripts/health-check.ts --webpack-version "$wp_version" || echo "::warning::Health check flagged $version_tag"
             fi
-          done
-
+           done
       - name: Update version coverage dashboard
         run: |
           mkdir -p monitoring/data
