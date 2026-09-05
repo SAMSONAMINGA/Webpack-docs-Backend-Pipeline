@@ -54,8 +54,8 @@ jobs:
       - name: Check for alert-level statuses
         run: |
          if [ ! -d "reports" ]; then
-           echo "⚠️ No reports directory found. Skipping health checks."
-           exit 0
+          echo "⚠️ No reports/ directory found. Skipping health checks until extraction runs."
+          exit 0
          fi
          
          for dir in reports/v*/; do
