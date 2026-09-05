@@ -38,7 +38,13 @@ jobs:
           done
 
       - name: Update version coverage dashboard
-        run: pnpm exec tsx scripts/sync-versions.ts
+        run: |
+          if [ ! -d "reports" ]; then
+            echo" No reportd/ directory found.Skipping version sync untill exctraction runs."
+            mkdir -p monitoring/data
+            exit 0
+          fi
+          pnpm exec tsx scripts/sync-versions.ts
 
       - name: Upload monitoring snapshot
         uses: actions/upload-artifact@v4
@@ -54,15 +60,19 @@ jobs:
       - name: Check for alert-level statuses
         run: |
           if [ ! -d "reports" ]; then
-            echo "⚠️ No reports/ directory found. Skipping health checks until extraction runs."
+            echo "⚠️ No reports/ directory found. Skipping alert check until extraction runs."
             exit 0
           fi
-         
-          for dir in reports/v*/; do
-            version_tag=$(basename "$dir")
-            wp_version=$(node -e "console.log(require('./${dir}intermediate.json').webpackVersion)" 2>/dev/null || echo "")
-            if [ -n "$wp_version" ]; then
-              echo "Checking $version_tag ($wp_version)"
-              pnpm exec tsx scripts/health-check.ts --webpack-version "$wp_version" || echo "::warning::Health check flagged $version_tag"
-            fi
+   
+          alert_found=0
+          for f in monitoring/data/health-*.json; do
+            [ -e "$f" ] || continue
+            status=$(node -e "console.log(require('./$f').status)")
+            echo "$f -> $status"
+            if [ "$status" = "alert" ]; then alert_found=1; fi
+           done
+           if [ "$alert_found" = "1" ]; then
+             echo "::error::One or more documented versions are in ALERT status. See monitoring-snapshot artifact."
+             exit 1
+           fi
            done
