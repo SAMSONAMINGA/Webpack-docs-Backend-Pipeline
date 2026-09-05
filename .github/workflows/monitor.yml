@@ -28,6 +28,7 @@ jobs:
 
       - name: Re-run health checks for every documented version
         run: |
+          mkdir -p reports
           for dir in reports/v*/; do
             version_tag=$(basename "$dir")
             wp_version=$(node -e "console.log(require('./${dir}intermediate.json').webpackVersion)" 2>/dev/null || echo "")
@@ -39,6 +40,7 @@ jobs:
 
       - name: Update version coverage dashboard
         run: |
+          mkdir -p monitoring/data
           if [ ! -d "reports" ]; then
             echo" No reportd/ directory found.Skipping version sync untill exctraction runs."
             mkdir -p monitoring/data
@@ -63,7 +65,7 @@ jobs:
             echo "⚠️ No reports/ directory found. Skipping alert check until extraction runs."
             exit 0
           fi
-   
+           
           alert_found=0
           for f in monitoring/data/health-*.json; do
             [ -e "$f" ] || continue
